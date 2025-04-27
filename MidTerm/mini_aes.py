@@ -96,137 +96,12 @@ class MiniAes:
         state = [(int(self.__plaintext, 16) >> 12) & 0xF, (int(self.__plaintext, 16) >> 8) & 0xF,
                  (int(self.__plaintext, 16) >> 4) & 0xF, int(self.__plaintext, 16) & 0xF]
 
-<<<<<<< HEAD
-    def sub_nibbles(self, state: list[list[int]]):
-        subs_list: list[list[int]] = []
-
-        for matrix in state:
-            nibble_subs: list[int] = []
-
-            for nibble in matrix:
-                nibble_subs.append(self.__SBOX__[nibble])
-
-            subs_list.append(nibble_subs)
-
-        return subs_list
-
-    def shift_rows(self, state: list[list[int]]):
-        for matrix in state:
-            matrix[1] ^= matrix[3]
-            matrix[3] ^= matrix[1]
-            matrix[1] ^= matrix[3]
-
-        return state
-
-    def mix_columns(self, state: list[list[int]]) -> list[list[int]]:
-        __CONSTANT_MATRIX = [
-            0x3, 0x4, 0x4, 0x3,
-        ]
-
-        result_list: list[list[int]] = []
-
-        for matrix in state:
-            this_matrix_result = []
-
-            # index 0
-            index_zero = (
-                self.__MULTIPLICATION_TABLE__[matrix[0]][__CONSTANT_MATRIX[0]]) ^ (
-                self.__MULTIPLICATION_TABLE__[matrix[1]][__CONSTANT_MATRIX[2]]
-            )
-
-            this_matrix_result.append(index_zero)
-
-            # index 1
-            index_one = (
-                self.__MULTIPLICATION_TABLE__[matrix[0]][__CONSTANT_MATRIX[1]]) ^ (
-                self.__MULTIPLICATION_TABLE__[matrix[1]][__CONSTANT_MATRIX[3]]
-            )
-            this_matrix_result.append(index_one)
-
-            # index 2
-            index_two = (
-                self.__MULTIPLICATION_TABLE__[matrix[2]][__CONSTANT_MATRIX[0]]) ^ (
-                self.__MULTIPLICATION_TABLE__[matrix[3]][__CONSTANT_MATRIX[2]]
-            )
-            this_matrix_result.append(index_two)
-
-            # index 3
-            index_three = (
-                self.__MULTIPLICATION_TABLE__[matrix[2]][__CONSTANT_MATRIX[1]]) ^ (
-                self.__MULTIPLICATION_TABLE__[matrix[3]][__CONSTANT_MATRIX[3]]
-            )
-            this_matrix_result.append(index_three)
-
-            result_list.append(this_matrix_result)
-
-        return result_list
-
-    def add_round_keys(
-        self, state: list[list[int]], round: int
-    ) -> list[list[int]]:
-        result: list[list[int]] = []
-
-        round_keys = self.get_round_keys()
-
-        for matrix in state:
-            this_matrix_result: list[int] = []
-
-            for s, k in zip(matrix, round_keys[round]):
-                this_matrix_result.append(s ^ k)
-
-            result.append(this_matrix_result)
-
-        return result
-
-    def state_to_hex(self, state: list[list[int]]) -> str:
-        # Converts the first block of encryption state into a hex string (for output)
-        result = ""
-        matrix = state[0]  # take ONLY the first matrix, hapus jika ingin outputnya lebih dari 4 digit
-        for i in range(0, len(matrix), 2):
-            combined = (matrix[i] << 4) | matrix[i + 1]
-            result += format(combined, "02X")
-        return result
-
-    def encrypt(self) -> list[list[int]]:
-=======
->>>>>>> 83b4839 (Update Mini AES: perbaikan main.py dan mini_aes.py)
         self.round_key_generator()
 
         print(f"Round 0 - Input State: {self.format_state(state)}")
         state = self.add_round_keys(state, self.__round_keys[0])
         print(f"Round 0 - After AddRoundKey: {self.format_state(state)}\n")
 
-<<<<<<< HEAD
-        for current_round in range(1, self.__ROUND__ + 1):
-            print(f"ROUND {current_round}")
-
-            state = self.sub_nibbles(state)
-            print(f"After SubNibbles: {self.state_to_hex(state)}")
-
-            state = self.shift_rows(state)
-            print(f"After ShiftRows : {self.state_to_hex(state)}")
-
-            state = self.mix_columns(state)
-            print(f"After MixColumns: {self.state_to_hex(state)}")
-
-            state = self.add_round_keys(state, current_round)
-            print(f"After AddRoundKey: {self.state_to_hex(state)}")
-
-        print("FINAL ROUND")
-        state = self.sub_nibbles(state)
-        print(f"After SubNibbles: {self.state_to_hex(state)}")
-
-        state = self.shift_rows(state)
-        print(f"After ShiftRows : {self.state_to_hex(state)}")
-
-        state = self.add_round_keys(state, 4)
-        print(f"After AddRoundKey: {self.state_to_hex(state)}")
-
-        print("Encrypt COMPLETE")
-        print(f"Ciphertext: {self.state_to_hex(state)}")
-
-        return state
-=======
         for r in range(1, 4):
             print(f"ROUND {r}")
             state = self.sub_nibbles(state)
@@ -238,7 +113,6 @@ class MiniAes:
             if r != 3:
                 state = self.mix_columns(state)
                 print(f"After MixColumns: {self.format_state(state)}")
->>>>>>> 83b4839 (Update Mini AES: perbaikan main.py dan mini_aes.py)
 
             state = self.add_round_keys(state, self.__round_keys[r])
             print(f"After AddRoundKey: {self.format_state(state)}\n")
@@ -291,27 +165,5 @@ if __name__ == "__main__":
     ciphertext = aes.encrypt()
     print(f"Ciphertext: {ciphertext}")
 
-<<<<<<< HEAD
-            # index 3
-            index_three = (__CONSTANT_MATRIX[1] * matrix[2]) ^ (
-                __CONSTANT_MATRIX[3] * matrix[3]
-            )
-            this_matrix_result.append(index_three)
-
-            result_list.append(this_matrix_result)
-
-        return result_list
-
-    def decrypt(self) -> list[list[int]]:
-        return [[]]
-
-aes = MiniAes()
-aes.set_plaintext("C3C3")
-aes.set_keys("A1A1")
-state_result = aes.encrypt()
-cipher_hex = aes.state_to_hex(state_result)
-print("Ciphertext:", cipher_hex)
-=======
     decrypted = aes.decrypt(ciphertext)
     print(f"Decrypted : {decrypted}")
->>>>>>> 83b4839 (Update Mini AES: perbaikan main.py dan mini_aes.py)
