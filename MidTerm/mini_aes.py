@@ -74,7 +74,7 @@ class MiniAes:
             # append with "0"
             keys += "0"
 
-        self.__keys = keys[:2]
+        self.__keys = keys
 
     def get_keys(self) -> str:
         return self.__keys
@@ -86,8 +86,8 @@ class MiniAes:
     def get_round_keys(self) -> list[list[int]]:
         return self.__round_keys
 
-    def convert_to_nibble(self, text: str) -> list[list[int]]:
-        res: list[list[int]] = []
+    def convert_to_nibble(self, text: str) -> list[int]:
+        res: list[int] = []
         copy_of_text = text
 
         # defensive measure
@@ -99,16 +99,8 @@ class MiniAes:
         if len(text) & 1:
             copy_of_text += "0"
 
-        for i in range(0, len(copy_of_text), 2):
-            this_char_list: list[int] = []
-            two_chars = text[i : i + 2]
-
-            this_char_list.append((int(two_chars[0], 16) & 240) >> 4)
-            this_char_list.append(int(two_chars[0], 16) & 15)
-            this_char_list.append((int(two_chars[1], 16) & 240) >> 4)
-            this_char_list.append(int(two_chars[1], 16) & 15)
-
-            res.append(this_char_list)
+        for char in copy_of_text:
+            res.append(int(char, 16))
 
         return res
 
@@ -117,16 +109,16 @@ class MiniAes:
 
         # keys
         if self.get_keys() == "":
-            self.set_keys("00")
+            self.set_keys("0000")
 
         keys = self.get_keys()
 
         # round 0
         round_0_keys: list[int] = []
-        round_0_keys.append((int(keys[0], 16) & 240) >> 4)
-        round_0_keys.append(int(keys[0], 16) & 15)
-        round_0_keys.append((int(keys[1], 16) & 240) >> 4)
-        round_0_keys.append(int(keys[1], 16) & 15)
+        round_0_keys.append(int(keys[0], 16))
+        round_0_keys.append(int(keys[1], 16))
+        round_0_keys.append(int(keys[2], 16))
+        round_0_keys.append(int(keys[3], 16))
 
         round_keys.append(round_0_keys)
 
@@ -146,96 +138,83 @@ class MiniAes:
 
         return
 
-    def sub_nibbles(self, state: list[list[int]]):
-        subs_list: list[list[int]] = []
+    def sub_nibbles(self, state: list[int]) -> list[int]:
+        for i in range(0, len(state)):
+            state[i] = self.__SBOX__[state[i]]
 
-        for matrix in state:
-            nibble_subs: list[int] = []
+        return state
 
-            for nibble in matrix:
-                nibble_subs.append(self.__SBOX__[nibble])
+    def shift_rows(self, state: list[int]) -> list[int]:
+        return [state[0], state[3], state[2], state[1]]
 
-            subs_list.append(nibble_subs)
-
-        return subs_list
-
-    def shift_rows(self, state: list[list[int]]) -> list[list[int]]:
-        return [[matrix[0], matrix[3], matrix[2], matrix[1]] for matrix in state]
-
-    def mix_columns(self, state: list[list[int]]) -> list[list[int]]:
+    def mix_columns(self, state: list[int]) -> list[int]:
         __CONSTANT_MATRIX = [
             0x1, 0x4, 0x4, 0x1,
         ]
 
-        result_list: list[list[int]] = []
+        res: list[int] = []
 
-        for matrix in state:
-            this_matrix_result = []
-
-            # index 0
-            index_zero = (
-                self.__MULTIPLICATION_TABLE__[matrix[0]][__CONSTANT_MATRIX[0]]) ^ (
-                self.__MULTIPLICATION_TABLE__[matrix[1]][__CONSTANT_MATRIX[2]]
+        # index 0
+        index_zero = (
+            self.__MULTIPLICATION_TABLE__[__CONSTANT_MATRIX[0]][state[0]]) ^ (
+            self.__MULTIPLICATION_TABLE__[__CONSTANT_MATRIX[2]][state[1]]
             )
+        res.append(index_zero)
 
-            this_matrix_result.append(index_zero)
-
-            # index 1
-            index_one = (
-                self.__MULTIPLICATION_TABLE__[matrix[0]][__CONSTANT_MATRIX[1]]) ^ (
-                self.__MULTIPLICATION_TABLE__[matrix[1]][__CONSTANT_MATRIX[3]]
+        # index 1
+        index_one = (
+            self.__MULTIPLICATION_TABLE__[__CONSTANT_MATRIX[1]][state[0]]) ^ (
+            self.__MULTIPLICATION_TABLE__[__CONSTANT_MATRIX[3]][state[1]]
             )
-            this_matrix_result.append(index_one)
+        res.append(index_one)
 
-            # index 2
-            index_two = (
-                self.__MULTIPLICATION_TABLE__[matrix[2]][__CONSTANT_MATRIX[0]]) ^ (
-                self.__MULTIPLICATION_TABLE__[matrix[3]][__CONSTANT_MATRIX[2]]
+        # index 2
+        index_two = (
+            self.__MULTIPLICATION_TABLE__[__CONSTANT_MATRIX[0]][state[2]]) ^ (
+            self.__MULTIPLICATION_TABLE__[__CONSTANT_MATRIX[2]][state[3]]
             )
-            this_matrix_result.append(index_two)
+        res.append(index_two)
 
-            # index 3
-            index_three = (
-                self.__MULTIPLICATION_TABLE__[matrix[2]][__CONSTANT_MATRIX[1]]) ^ (
-                self.__MULTIPLICATION_TABLE__[matrix[3]][__CONSTANT_MATRIX[3]]
+        # index 3
+        index_three = (
+            self.__MULTIPLICATION_TABLE__[__CONSTANT_MATRIX[1]][state[2]]) ^ (
+            self.__MULTIPLICATION_TABLE__[__CONSTANT_MATRIX[3]][state[3]]
             )
-            this_matrix_result.append(index_three)
+        res.append(index_three)
 
-            result_list.append(this_matrix_result)
-
-        return result_list
+        return res
 
     def add_round_keys(
-        self, state: list[list[int]], round: int
-    ) -> list[list[int]]:
-        result: list[list[int]] = []
+        self, state: list[int], round: int
+    ) -> list[int]:
+        result: list[int] = []
 
         round_keys = self.get_round_keys()
 
-        for matrix in state:
-            this_matrix_result: list[int] = []
-
-            for s, k in zip(matrix, round_keys[round]):
-                this_matrix_result.append(s ^ k)
-
-            result.append(this_matrix_result)
+        for s, k in zip(state, round_keys[round]):
+            result.append(s ^ k)
 
         return result
 
-    def state_to_hex(self, state: list[list[int]]) -> str:
+    def state_to_hex(self, state: list[int]) -> str:
         # Converts the first block of encryption state into a hex string (for output)
         result = ""
-        matrix = state[0]  # take ONLY the first matrix, hapus jika ingin outputnya lebih dari 4 digit
-        for i in range(0, len(matrix), 2):
-            combined = (matrix[i] << 4) | matrix[i + 1]
-            result += format(combined, "02X")
+        
+        for num in state:
+            result += format(num, "X")
+
         return result
 
-    def encrypt(self) -> list[list[int]]:
+
+    def encrypt(self) -> list[int]:
         self.round_key_generator()
+        self.log(f"Using Keys: {self.get_round_keys()}")
 
         state = self.convert_to_nibble(self.get_plaintext())
+        self.log(f"Encrypting {self.state_to_hex(state)}")
+
         state = self.add_round_keys(state, 0)
+        self.log(f"After RoundKeys: {self.state_to_hex(state)}")
 
         for current_round in range(1, self.__ROUND__):
             self.log(f"ROUND {current_round}")
@@ -266,77 +245,74 @@ class MiniAes:
 
         self.log(f"Ciphertext: {self.state_to_hex(state)}")
 
+        self.set_ciphertext(self.state_to_hex(state))
+
         return state
 
-    def inv_sub_nibbles(self, state: list[list[int]]):
-        inv_subs_list: list[list[int]] = []
+    def inv_sub_nibbles(self, state: list[int]) -> list[int]:
+        for i in range(0, len(state)):
+            state[i] = self.__INV_SBOX__[state[i]]
 
-        for matrix in state:
-            nibble_subs: list[int] = []
+        return state
 
-            for nibble in matrix:
-                nibble_subs.append(self.__INV_SBOX__[nibble])
+    def inv_shift_rows(self, state: list[int]) -> list[int]:
+        return [state[0], state[3], state[2], state[1]]
 
-            inv_subs_list.append(nibble_subs)
-
-        return inv_subs_list
-
-    def inv_shift_rows(self, state: list[list[int]]):
-        return [[matrix[0], matrix[3], matrix[2], matrix[1]] for matrix in state]
-
-    def inv_mix_columns(self, state: list[list[int]]) -> list[list[int]]:
+    def inv_mix_columns(self, state: list[int]) -> list[int]:
         __CONSTANT_MATRIX = [
             0x9, 0x2, 0x2, 0x9,
         ]
 
-        result_list: list[list[int]] = []
+        res: list[int] = []
 
-        for matrix in state:
-            this_matrix_result = []
-
-            # index 0
-            index_zero = (
-              self.__MULTIPLICATION_TABLE__[matrix[0]][__CONSTANT_MATRIX[0]] ^
-              self.__MULTIPLICATION_TABLE__[matrix[1]][__CONSTANT_MATRIX[2]]
+        # index 0
+        index_zero = (
+            self.__MULTIPLICATION_TABLE__[__CONSTANT_MATRIX[0]][state[0]]) ^ (
+            self.__MULTIPLICATION_TABLE__[__CONSTANT_MATRIX[2]][state[1]]
             )
-            this_matrix_result.append(index_zero)
+        res.append(index_zero)
 
-            # index 1
-            index_one = (
-              self.__MULTIPLICATION_TABLE__[matrix[0]][__CONSTANT_MATRIX[1]] ^
-              self.__MULTIPLICATION_TABLE__[matrix[1]][__CONSTANT_MATRIX[3]]
+        # index 1
+        index_one = (
+            self.__MULTIPLICATION_TABLE__[__CONSTANT_MATRIX[1]][state[0]]) ^ (
+            self.__MULTIPLICATION_TABLE__[__CONSTANT_MATRIX[3]][state[1]]
             )
-            this_matrix_result.append(index_one)
+        res.append(index_one)
 
-            # index 2
-            index_two = (
-              self.__MULTIPLICATION_TABLE__[matrix[2]][__CONSTANT_MATRIX[0]] ^
-              self.__MULTIPLICATION_TABLE__[matrix[3]][__CONSTANT_MATRIX[2]]
+        # index 2
+        index_two = (
+            self.__MULTIPLICATION_TABLE__[__CONSTANT_MATRIX[0]][state[2]]) ^ (
+            self.__MULTIPLICATION_TABLE__[__CONSTANT_MATRIX[2]][state[3]]
             )
-            this_matrix_result.append(index_two)
+        res.append(index_two)
 
-            # index 3
-            index_three = (
-              self.__MULTIPLICATION_TABLE__[matrix[2]][__CONSTANT_MATRIX[1]] ^
-              self.__MULTIPLICATION_TABLE__[matrix[3]][__CONSTANT_MATRIX[3]]
+        # index 3
+        index_three = (
+            self.__MULTIPLICATION_TABLE__[__CONSTANT_MATRIX[1]][state[2]]) ^ (
+            self.__MULTIPLICATION_TABLE__[__CONSTANT_MATRIX[3]][state[3]]
             )
-            this_matrix_result.append(index_three)
+        res.append(index_three)
 
-            result_list.append(this_matrix_result)
+        return res
 
-        return result_list
-
-    def decrypt(self) -> list[list[int]]:
-        self.round_key_generator()
+    def decrypt(self) -> list[int]:
+        self.log(f"Using Keys: {self.get_round_keys()}")
 
         self.log("Decrypting from final round...")
 
-        state = self.convert_to_nibble(self.get_plaintext())
-        state = self.add_round_keys(state, 3)
-        state = self.inv_shift_rows(state)
-        state = self.inv_sub_nibbles(state)
+        state = self.convert_to_nibble(self.get_ciphertext())
+        self.log(f"Decrypting {self.state_to_hex(state)}")
 
-        for current_round in range(2, 0):
+        state = self.add_round_keys(state, 3)
+        self.log(f"After InvRoundKeys {self.state_to_hex(state)}")
+
+        state = self.inv_shift_rows(state)
+        self.log(f"After InvShiftRows {self.state_to_hex(state)}")
+
+        state = self.inv_sub_nibbles(state)
+        self.log(f"After InvSubNibbles {self.state_to_hex(state)}")
+
+        for current_round in range(2, 0, -1):
             self.log(f"ROUND {current_round}")
 
             state = self.add_round_keys(state, current_round)
@@ -360,3 +336,8 @@ class MiniAes:
         self.log(f"Plaintext: {self.state_to_hex(state)}")
 
         return state
+
+
+main_class = MiniAes("AFFA", "FAAF")
+main_class.encrypt()
+main_class.decrypt()
