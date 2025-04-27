@@ -3,142 +3,100 @@ referensi:
 - https://piazza.com/class_profile/get_resource/ixlc30gojpe5fs/iyv0273azwtz4
 - https://sandilands.info/sgordon/teaching/reports/simplified-aes-example-v2.pdf
 """
+
 class MiniAes:
-    # constants
     __ROUND__ = 3
     __SBOX__ = [
-        0xE, 0x4, 0xD, 0x1,  # 0x0  0x1  0x2  0x3
-        0x2, 0xF, 0xB, 0x8,  # 0x4  0x5  0x6  0x7
-        0x3, 0xA, 0x6, 0xC,  # 0x8  0x9  0xA  0xB
-        0x5, 0x9, 0x0, 0x7,  # 0xC  0xC  0xD  0xE
+        0xE, 0x4, 0xD, 0x1,
+        0x2, 0xF, 0xB, 0x8,
+        0x3, 0xA, 0x6, 0xC,
+        0x5, 0x9, 0x0, 0x7
     ]
+
     __INV_SBOX__ = [
         0xE, 0x3, 0x4, 0x8,
         0x1, 0xC, 0xA, 0xF,
         0x7, 0xD, 0x9, 0x6,
-        0xD, 0x2, 0x0, 0x5,
-    ]
-    __MULTIPLICATION_TABLE__ = [
-        # 0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
-        [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0], # 0
-        [0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF], # 1
-        [0x0, 0x2, 0x4, 0x6, 0x8, 0xA, 0xC, 0xE, 0x3, 0x1, 0x7, 0x5, 0xB, 0x9, 0xF, 0xD], # 2
-        [0x0, 0x3, 0x6, 0x5, 0xC, 0xF, 0xA, 0x9, 0xB, 0x8, 0xD, 0xE, 0x7, 0x4, 0x1, 0x2], # 3
-        [0x0, 0x4, 0x8, 0xC, 0x3, 0x7, 0xB, 0xF, 0x6, 0x2, 0xE, 0xA, 0x5, 0x1, 0xD, 0x9], # 4
-        [0x0, 0x5, 0xA, 0xF, 0x7, 0x2, 0xD, 0x8, 0xE, 0xB, 0x4, 0x1, 0x9, 0xC, 0x3, 0x6], # 5
-        [0x0, 0x6, 0xC, 0xA, 0xB, 0xD, 0x7, 0x1, 0x5, 0x3, 0x9, 0xF, 0xE, 0x8, 0x2, 0x4], # 6
-        [0x0, 0x7, 0xE, 0x9, 0xF, 0x8, 0x1, 0x6, 0xD, 0xA, 0x3, 0x4, 0x2, 0x5, 0xC, 0xB], # 7
-        [0x0, 0x8, 0x3, 0xB, 0x6, 0xE, 0x5, 0xD, 0xC, 0x4, 0xF, 0x7, 0xA, 0x2, 0x9, 0x1], # 8
-        [0x0, 0x9, 0x1, 0x8, 0x2, 0xB, 0x3, 0xA, 0x4, 0xD, 0x5, 0xC, 0x6, 0xF, 0x7, 0xE], # 9
-        [0x0, 0xA, 0x7, 0xD, 0xE, 0x4, 0x9, 0x3, 0xF, 0x5, 0x8, 0x2, 0x1, 0xB, 0x6, 0xC], # A
-        [0x0, 0xB, 0x5, 0xE, 0xA, 0x1, 0xF, 0x4, 0x7, 0xC, 0x2, 0x9, 0xD, 0x6, 0x8, 0x3], # B
-        [0x0, 0xC, 0xB, 0x7, 0x5, 0x9, 0xE, 0x2, 0xA, 0x6, 0x1, 0xD, 0xF, 0x3, 0x4, 0x8], # C
-        [0x0, 0xD, 0x9, 0x4, 0x1, 0xC, 0x8, 0x5, 0x2, 0xF, 0xB, 0x6, 0x3, 0xE, 0xA, 0x7], # D
-        [0x0, 0xE, 0xF, 0x1, 0xD, 0x3, 0x2, 0xC, 0x9, 0x7, 0x6, 0x8, 0x4, 0xA, 0xB, 0x5], # E
-        [0x0, 0xF, 0xD, 0x2, 0x9, 0x6, 0x4, 0x8, 0x1, 0xE, 0xC, 0x3, 0x8, 0x7, 0x5, 0xA], # F
+        0xB, 0x2, 0x0, 0x5
     ]
 
-    def __init__(self, plaintext: str = "", keys: str = ""):
-        self.__plaintext = plaintext
-        self.__keys = keys
-        self.__round_keys: list[list[int]] = []
-        self.__cyphertext = ""
+    def __init__(self):
+        self.__plaintext = ""
+        self.__keys = ""
+        self.__round_keys = []
 
-    # Getter and Setter for __plaintext
     def set_plaintext(self, plaintext: str) -> None:
         self.__plaintext = plaintext
 
     def get_plaintext(self) -> str:
         return self.__plaintext
 
-    # Getter and Setter for __keys
     def set_keys(self, keys: str) -> None:
-        # make at least the length of the keys is 2
-        while len(keys) < 2:
-            # append with "0"
-            keys += "0"
-
-        self.__keys = keys[:2]
+        while len(keys) < 4:
+            keys = "0" + keys
+        self.__keys = keys[:4]
 
     def get_keys(self) -> str:
         return self.__keys
 
-    # Getter and Setter for __round_keys
-    def set_round_keys(self, keys: list[list[int]]) -> None:
-        self.__round_keys = keys
-
-    def get_round_keys(self) -> list[list[int]]:
-        return self.__round_keys
-
-    # Getter and Setter for __ciphertext
-    def set_ciphertext(self, ciphertext: str) -> None:
-        self.__ciphertext = ciphertext
-
-    def get_ciphertext(self) -> str:
-        return self.__ciphertext
-
-    def convert_to_nibble(self, text: str) -> list[list[int]]:
-        res: list[list[int]] = []
-        copy_of_text = text
-
-        # defensive measure
-        if len(text) == 0:
-            raise ValueError("plaintext must not be empty")
-
-        # check if plaintext is divisible by 2
-        # if not, pad the plaintext with a '0' character
-        if len(text) & 1:
-            copy_of_text += "0"
-
-        for i in range(0, len(copy_of_text), 2):
-            this_char_list: list[int] = []
-            two_chars = text[i : i + 2]
-
-            this_char_list.append((int(two_chars[0], 16) & 240) >> 4)
-            this_char_list.append(int(two_chars[0], 16) & 15)
-            this_char_list.append((int(two_chars[1], 16) & 240) >> 4)
-            this_char_list.append(int(two_chars[1], 16) & 15)
-
-            print(this_char_list)
-
-            res.append(this_char_list)
-
-        return res
-
     def round_key_generator(self) -> None:
-        round_keys: list[list[int]] = []
+        key = int(self.__keys, 16)
+        self.__round_keys = [key]
+        for i in range(1, 4):
+            next_key = ((self.__round_keys[i-1] << 1) & 0xFFFF) ^ (0b10011 << (i-1))
+            self.__round_keys.append(next_key)
 
-        # keys
-        if self.get_keys() == "":
-            self.set_keys("00")
+    def sub_nibbles(self, state: list[int]) -> list[int]:
+        return [self.__SBOX__[nibble] for nibble in state]
 
-        keys = self.get_keys()
+    def inv_sub_nibbles(self, state: list[int]) -> list[int]:
+        return [self.__INV_SBOX__[nibble] for nibble in state]
 
-        # round 0
-        round_0_keys: list[int] = []
-        round_0_keys.append((int(keys[0], 16) & 240) >> 4)
-        round_0_keys.append(int(keys[0], 16) & 15)
-        round_0_keys.append((int(keys[1], 16) & 240) >> 4)
-        round_0_keys.append((int(keys[1], 16) & 15))
+    def shift_rows(self, state: list[int]) -> list[int]:
+        return [state[0], state[3], state[2], state[1]]
 
-        round_keys.append(round_0_keys)
+    def inv_shift_rows(self, state: list[int]) -> list[int]:
+        return [state[0], state[3], state[2], state[1]]
 
-        # round = 3
-        # but needed more for round 0 (plus 1) and the last one (plus 1)
-        for i in range(self.__ROUND__ + 2):
-            this_round_keys: list[int] = []
+    def gf_mult(self, a: int, b: int) -> int:
+        p = 0
+        for _ in range(4):
+            if b & 1:
+                p ^= a
+            high_bit_set = a & 0x8
+            a <<= 1
+            if high_bit_set:
+                a ^= 0x13
+            a &= 0xF
+            b >>= 1
+        return p
 
-            this_round_keys.append(round_keys[i][0] ^ self.__SBOX__[round_keys[i][3]] ^ i)
-            this_round_keys.append(round_keys[i][1] ^ this_round_keys[0])
-            this_round_keys.append(round_keys[i][2] ^ this_round_keys[1])
-            this_round_keys.append(round_keys[i][3] ^ this_round_keys[2])
+    def mix_columns(self, state: list[int]) -> list[int]:
+        new_state = [0] * 4
+        new_state[0] = self.gf_mult(1, state[0]) ^ self.gf_mult(4, state[1])
+        new_state[1] = self.gf_mult(4, state[0]) ^ self.gf_mult(1, state[1])
+        new_state[2] = self.gf_mult(1, state[2]) ^ self.gf_mult(4, state[3])
+        new_state[3] = self.gf_mult(4, state[2]) ^ self.gf_mult(1, state[3])
+        return new_state
 
-            round_keys.append(this_round_keys)
+    def inv_mix_columns(self, state: list[int]) -> list[int]:
+        new_state = [0] * 4
+        new_state[0] = self.gf_mult(9, state[0]) ^ self.gf_mult(2, state[1])
+        new_state[1] = self.gf_mult(2, state[0]) ^ self.gf_mult(9, state[1])
+        new_state[2] = self.gf_mult(9, state[2]) ^ self.gf_mult(2, state[3])
+        new_state[3] = self.gf_mult(2, state[2]) ^ self.gf_mult(9, state[3])
+        return new_state
 
-        self.set_round_keys(round_keys)
+    def add_round_keys(self, state: list[int], round_key: int) -> list[int]:
+        rk = [(round_key >> 12) & 0xF, (round_key >> 8) & 0xF, (round_key >> 4) & 0xF, round_key & 0xF]
+        return [s ^ k for s, k in zip(state, rk)]
 
-        return
+    def encrypt(self) -> str:
+        print("Encrypt :\n")
+        state = [(int(self.__plaintext, 16) >> 12) & 0xF, (int(self.__plaintext, 16) >> 8) & 0xF,
+                 (int(self.__plaintext, 16) >> 4) & 0xF, int(self.__plaintext, 16) & 0xF]
 
+<<<<<<< HEAD
     def sub_nibbles(self, state: list[list[int]]):
         subs_list: list[list[int]] = []
 
@@ -230,11 +188,15 @@ class MiniAes:
         return result
 
     def encrypt(self) -> list[list[int]]:
+=======
+>>>>>>> 83b4839 (Update Mini AES: perbaikan main.py dan mini_aes.py)
         self.round_key_generator()
 
-        state = self.convert_to_nibble(self.get_plaintext())
-        state = self.add_round_keys(state, 0)
+        print(f"Round 0 - Input State: {self.format_state(state)}")
+        state = self.add_round_keys(state, self.__round_keys[0])
+        print(f"Round 0 - After AddRoundKey: {self.format_state(state)}\n")
 
+<<<<<<< HEAD
         for current_round in range(1, self.__ROUND__ + 1):
             print(f"ROUND {current_round}")
 
@@ -264,58 +226,72 @@ class MiniAes:
         print(f"Ciphertext: {self.state_to_hex(state)}")
 
         return state
+=======
+        for r in range(1, 4):
+            print(f"ROUND {r}")
+            state = self.sub_nibbles(state)
+            print(f"After SubNibbles: {self.format_state(state)}")
 
-        return state
+            state = self.shift_rows(state)
+            print(f"After ShiftRows: {self.format_state(state)}")
 
-    def inv_sub_nibbles(self, state: list[list[int]]):
-        inv_subs_list: list[list[int]] = []
+            if r != 3:
+                state = self.mix_columns(state)
+                print(f"After MixColumns: {self.format_state(state)}")
+>>>>>>> 83b4839 (Update Mini AES: perbaikan main.py dan mini_aes.py)
 
-        for matrix in state:
-            nibble_subs: list[int] = []
+            state = self.add_round_keys(state, self.__round_keys[r])
+            print(f"After AddRoundKey: {self.format_state(state)}\n")
 
-            for nibble in matrix:
-                nibble_subs.append(self.__INV_SBOX__[nibble])
+        ciphertext = (state[0] << 12) | (state[1] << 8) | (state[2] << 4) | state[3]
+        print("Enrypt COMPLETE\n")
+        return f"{ciphertext:04X}"
 
-            inv_subs_list.append(nibble_subs)
+    def decrypt(self, ciphertext: str) -> str:
+        print("\nDecryption :\n")
+        state = [(int(ciphertext, 16) >> 12) & 0xF, (int(ciphertext, 16) >> 8) & 0xF,
+                 (int(ciphertext, 16) >> 4) & 0xF, int(ciphertext, 16) & 0xF]
 
-        return inv_subs_list
+        self.round_key_generator()
 
-    def inv_shift_rows(self, state: list[list[int]]):
-        for matrix in state:
-            matrix[1] ^= matrix[3]
-            matrix[3] ^= matrix[1]
-            matrix[1] ^= matrix[3]
+        print(f"Round 3 - Input State: {self.format_state(state)}")
+        state = self.add_round_keys(state, self.__round_keys[3])
+        print(f"Round 3 - After AddRoundKey: {self.format_state(state)}\n")
 
-        return state
+        for r in range(2, -1, -1):
+            print(f"=== ROUND {r} ===")
+            state = self.inv_shift_rows(state)
+            print(f"After InvShiftRows: {self.format_state(state)}")
 
-    def inv_mix_columns(self, state: list[list[int]]) -> list[list[int]]:
-        __CONSTANT_MATRIX = [
-            0x3, 0x4, 0x4, 0x3,
-        ]
+            state = self.inv_sub_nibbles(state)
+            print(f"After InvSubNibbles: {self.format_state(state)}")
 
-        result_list: list[list[int]] = []
+            state = self.add_round_keys(state, self.__round_keys[r])
+            print(f"After AddRoundKey: {self.format_state(state)}")
 
-        for matrix in state:
-            this_matrix_result = []
+            if r != 0:
+                state = self.inv_mix_columns(state)
+                print(f"After InvMixColumns: {self.format_state(state)}\n")
 
-            # index 0
-            index_zero = (__CONSTANT_MATRIX[0] * matrix[0]) ^ (
-                __CONSTANT_MATRIX[2] * matrix[1]
-            )
-            this_matrix_result.append(index_zero)
+        plaintext = (state[0] << 12) | (state[1] << 8) | (state[2] << 4) | state[3]
+        print("Decryption COMPLETE\n")
+        return f"{plaintext:04X}"
 
-            # index 1
-            index_one = (__CONSTANT_MATRIX[1] * matrix[0]) ^ (
-                __CONSTANT_MATRIX[3] * matrix[1]
-            )
-            this_matrix_result.append(index_one)
+    def format_state(self, state: list[int]) -> str:
+        return ''.join(f"{x:X}" for x in state)
 
-            # index 2
-            index_two = (__CONSTANT_MATRIX[0] * matrix[2]) ^ (
-                __CONSTANT_MATRIX[2] * matrix[3]
-            )
-            this_matrix_result.append(index_two)
+if __name__ == "__main__":
+    plaintext = input("Masukkan plaintext (hex 4 digit, contoh 1234): ")
+    key = input("Masukkan key (hex 4 digit, contoh 5678): ")
 
+    aes = MiniAes()
+    aes.set_plaintext(plaintext)
+    aes.set_keys(key)
+
+    ciphertext = aes.encrypt()
+    print(f"Ciphertext: {ciphertext}")
+
+<<<<<<< HEAD
             # index 3
             index_three = (__CONSTANT_MATRIX[1] * matrix[2]) ^ (
                 __CONSTANT_MATRIX[3] * matrix[3]
@@ -335,3 +311,7 @@ aes.set_keys("A1A1")
 state_result = aes.encrypt()
 cipher_hex = aes.state_to_hex(state_result)
 print("Ciphertext:", cipher_hex)
+=======
+    decrypted = aes.decrypt(ciphertext)
+    print(f"Decrypted : {decrypted}")
+>>>>>>> 83b4839 (Update Mini AES: perbaikan main.py dan mini_aes.py)

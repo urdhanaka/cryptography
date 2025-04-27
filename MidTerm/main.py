@@ -12,22 +12,37 @@ def main(page: ft.Page):
 
     # Input fields
     key_field = ft.TextField(
+<<<<<<< HEAD
         label="Kunci (4 Hex Digit)",  # updated label
         hint_text="Masukkan kunci 4 karakter hex",  # updated hint
+=======
+        label="Kunci (4 Hex Digit)",
+        hint_text="Masukkan kunci 4 karakter hex",
+>>>>>>> 83b4839 (Update Mini AES: perbaikan main.py dan mini_aes.py)
         width=400,
         text_align=ft.TextAlign.CENTER
     )
 
     plain_text_field = ft.TextField(
+<<<<<<< HEAD
         label="Plaintext (4 Hex Digit)",  # updated label
         hint_text="Masukkan plaintext 4 karakter hex",  # updated hint
+=======
+        label="Plaintext (4 Hex Digit)",
+        hint_text="Masukkan plaintext 4 karakter hex",
+>>>>>>> 83b4839 (Update Mini AES: perbaikan main.py dan mini_aes.py)
         width=400,
         text_align=ft.TextAlign.CENTER
     )
 
     cipher_text_field = ft.TextField(
+<<<<<<< HEAD
         label="Ciphertext (4 Hex Digit)",  # updated label
         hint_text="Masukkan ciphertext 4 karakter hex",  # updated hint
+=======
+        label="Ciphertext (4 Hex Digit)",
+        hint_text="Masukkan ciphertext 4 karakter hex",
+>>>>>>> 83b4839 (Update Mini AES: perbaikan main.py dan mini_aes.py)
         width=400,
         text_align=ft.TextAlign.CENTER
     )
